@@ -1,0 +1,27 @@
+import bpy
+import bmesh
+from mathutils.geometry import (
+            distance_point_to_plane,
+            normal)
+
+context = bpy.context
+obj = context.edit_object
+mesh = obj.data
+
+TOL = 0.001
+
+# select None
+bpy.ops.mesh.select_all(action='DESELECT')
+bm = bmesh.from_edit_mesh(mesh)
+ngons = [f for f in bm.faces if len(f.verts) > 3]
+
+for ngon in ngons:
+    # define a plane from first 3 points
+    co = ngon.verts[0].co
+    norm = normal([v.co for v in ngon.verts[:3]])
+
+    ngon.select =  not all(
+        [abs(distance_point_to_plane(v.co, co, norm)) < TOL
+        for v in ngon.verts[3:]])
+
+bmesh.update_edit_mesh(mesh)
